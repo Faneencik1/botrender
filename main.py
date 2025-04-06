@@ -53,4 +53,21 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     elif message.document:
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
-        await context.bot.send_document(chat_id=CREATOR
+        await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
+        await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
+
+    # Неизвестный тип сообщения
+    else:
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
+
+if __name__ == "__main__":
+    init_db()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(MessageHandler(filters.ALL, forward))
+    logging.info("Бот запущен ✅ с Webhook")
+    app.run_webhook(
+        listen="0.0.0.0",
+        port=8080,
+        webhook_url=WEBHOOK_URL
+    )
