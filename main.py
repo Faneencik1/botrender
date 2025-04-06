@@ -1,7 +1,7 @@
 import os
 import logging
-from telegram import Update
-from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from telegram import Update, InputFile
+from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 from database import init_db, save_message
 
 logging.basicConfig(
@@ -66,11 +66,24 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
+        
+# Команда /log – отправка базы данных
+async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != CREATOR_CHAT_ID:
+        await update.message.reply_text("Недостаточно прав для доступа к логам.")
+        return
+
+    if os.path.exists("messages.db"):
+        with open("messages.db", "rb") as db_file:
+            await update.message.reply_document(document=InputFile(db_file), filename="messages.db")
+    else:
+        await update.message.reply_text("Файл базы данных не найден.")
 
 if __name__ == "__main__":
     init_db()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(MessageHandler(filters.ALL, forward))
+    app.add_handler(CommandHandler("log", send_log))
+    CommandHandler("log", send_log)
     logging.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
         listen="0.0.0.0",
