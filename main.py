@@ -33,10 +33,10 @@ save_message(
 )
 
 
-# Не отправляет /start
-if message.text and message.text.strip() == "/start":
-    await message.reply_text("Напиши свое сообщение или отправь фото.")
-    return
+    # Не отправляет /start
+    if message.text and message.text.strip() == "/start":
+        await message.reply_text("Напиши свое сообщение или отправь фото.")
+        return
 
 #Обычное сообщение
 if message.text:
