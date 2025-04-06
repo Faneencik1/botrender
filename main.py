@@ -2,6 +2,8 @@ import os
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from database import init_db, save_message
+
 
 logging.basicConfig(
     format='[%(asctime)s] %(message)s',
@@ -61,6 +63,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
 if __name__ == "__main__":
+    init_db()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, forward))
     logging.info("Бот запущен ✅ с Webhook")
