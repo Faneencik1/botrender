@@ -39,7 +39,7 @@ if message.text and message.text.strip() == "/start":
         return
 
 #Обычное сообщение
-    if message.text:
+if message.text:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
         await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
