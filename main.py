@@ -4,6 +4,7 @@ from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 from database import init_db, save_message
 
+# Логирование
 logging.basicConfig(
     format='[%(asctime)s] %(message)s',
     level=logging.INFO,
@@ -14,10 +15,12 @@ logging.basicConfig(
     ]
 )
 
+# Переменные окружения
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 
+# Основной обработчик сообщений
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
@@ -36,20 +39,20 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Напиши свое сообщение или отправь фото.")
         return
 
-    # Обычное сообщение
+    # Текст
     if message.text:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
         await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
 
-    # Фотография
+    # Фото
     elif message.photo:
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
         await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
         await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
 
-    # Голосовое сообщение
+    # Голосовое
     elif message.voice:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
@@ -62,12 +65,12 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
         await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
 
-    # Неизвестный тип сообщения
+    # Неизвестный тип
     else:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
-        
-# Команда /log – отправка базы данных
+
+# Команда /log — отправка базы данных
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != CREATOR_CHAT_ID:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
@@ -79,11 +82,12 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Файл базы данных не найден.")
 
+# Запуск бота
 if __name__ == "__main__":
     init_db()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("log", send_log))
-    CommandHandler("log", send_log)
+    app.add_handler(MessageHandler(filters.ALL, forward))
     logging.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
         listen="0.0.0.0",
