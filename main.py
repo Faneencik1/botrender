@@ -41,7 +41,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #Голосовое сообщение
     elif message.voice:
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: "@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
 
 #Документ
