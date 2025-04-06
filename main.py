@@ -2,14 +2,15 @@ import os
 import logging
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
+from keep_alive import keep_alive
 
-# 🔇 Отключаем лишние логи от сторонних библиотек
+# 🔇 Отключаем лишние логи
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("telegram").setLevel(logging.WARNING)
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logging.getLogger("asyncio").setLevel(logging.WARNING)
 
-# ✅ Настройка логирования в файл и консоль
+# ✅ Логирование в файл и консоль
 logging.basicConfig(
     format='[%(asctime)s] %(message)s',
     level=logging.INFO,
@@ -22,7 +23,7 @@ logging.basicConfig(
 
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
-WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Пример: https://your-render-url.onrender.com
+WEBHOOK_URL = os.getenv("WEBHOOK_URL")  # Добавь в .env свой render-ссылку
 
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
@@ -62,11 +63,12 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
 if __name__ == "__main__":
+    keep_alive()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(MessageHandler(filters.ALL, forward))
     logging.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
         listen="0.0.0.0",
-        port=int(os.environ.get("PORT", 8080)),
+        port=8080,
         webhook_url=WEBHOOK_URL
     )
