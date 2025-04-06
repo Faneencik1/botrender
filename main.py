@@ -23,13 +23,15 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
         return
+
+username = message.from_user.username or message.from_user.id
+
 save_message(
-    user_id=update.effective_user.id,
-    username=update.effective_user.username,
-    message=update.message.text
+    user_id=message.from_user.id,
+    username=username,
+    message=message.text
 )
 
-    username = message.from_user.username or message.from_user.id
 
 #Не отправляет /start
     if message.text and message.text.strip() == "/start":
