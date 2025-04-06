@@ -46,7 +46,7 @@ if message.text:
 
 #Фотография
 elif message.photo:
-        caption = message.caption if message.caption else ""
+    caption = message.caption if message.caption else ""
     await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
     await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
     await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
@@ -59,7 +59,7 @@ elif message.voice:
 
 #Документ
 elif message.document:
-        caption = message.caption if message.caption else ""
+    caption = message.caption if message.caption else ""
     await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
     await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
     await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
