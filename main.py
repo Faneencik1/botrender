@@ -19,6 +19,8 @@ logging.basicConfig(
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
+ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
+
 
 # Основной обработчик сообщений
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -72,7 +74,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Команда /log — отправка базы данных
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != CREATOR_CHAT_ID:
+    if update.effective_user.id not in ALLOWED_USERS:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
         return
 
