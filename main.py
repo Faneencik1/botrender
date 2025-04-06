@@ -24,29 +24,35 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     username = message.from_user.username or message.from_user.id
 
+#Не отправляет /start
     if message.text and message.text.strip() == "/start":
         return
 
+#Обычное сообщение
     if message.text:
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
 
+#Фотография
     elif message.photo:
         caption = message.caption if message.caption else ""
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
         await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
 
+#Голосовое сообщение
     elif message.voice:
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=fГолосовое сообщение от: "@{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
 
+#Документ
     elif message.document:
         caption = message.caption if message.caption else ""
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
         await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
 
+#Неизвестный тип сообщения
     else:
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"@{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
 if __name__ == "__main__":
