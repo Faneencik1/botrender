@@ -23,7 +23,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
         return
-    await save_message(
+        save_message(
     user_id=update.effective_user.id,
     username=update.effective_user.username,
     message=update.message.text
