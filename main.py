@@ -65,7 +65,7 @@ elif message.document:
         await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
 
 #Неизвестный тип сообщения
-    else:
+else:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
