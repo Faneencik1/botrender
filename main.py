@@ -26,29 +26,34 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 #Не отправляет /start
     if message.text and message.text.strip() == "/start":
+        await message.reply_text("Напиши свое сообщение или отправь фото.")
         return
 
 #Обычное сообщение
     if message.text:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
+        await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
 
 #Фотография
     elif message.photo:
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
         await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
+        await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
 
 #Голосовое сообщение
     elif message.voice:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
+        await message.reply_text("Голосовое сообщение получено! Скоро оно будет опубликовано в канал.")
 
 #Документ
     elif message.document:
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
         await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
+        await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
 
 #Неизвестный тип сообщения
     else:
