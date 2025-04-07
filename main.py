@@ -40,7 +40,20 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if message.text and message.text.strip() == "/start":
         await message.reply_text("Напиши свое сообщение или отправь фото.")
         return
+        
+    # Видео
+    elif message.video:
+        caption = message.caption if message.caption else ""
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
+        await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
+        await message.reply_text("Видео получено! Скоро оно будет опубликовано в канал.")
 
+    # Видеосообщение (кружок)
+    elif message.video_note:
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
+        await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
+        await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
+        
     # Текст
     if message.text:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
@@ -71,19 +84,6 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
-
-    # Видео
-    elif message.video:
-        caption = message.caption if message.caption else ""
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
-        await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
-        await message.reply_text("Видео получено! Скоро оно будет опубликовано в канал.")
-
-    # Видеосообщение (кружок)
-    elif message.video_note:
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
-        await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
-        await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
 
 # Команда /log — отправка базы данных
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
