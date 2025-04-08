@@ -92,16 +92,16 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
 # Команда /log — отправка базы данных
-async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
+async def send_logfile(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ALLOWED_USERS:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
         return
 
-    if os.path.exists("messages.db"):
-        with open("messages.db", "rb") as db_file:
-            await update.message.reply_document(document=InputFile(db_file), filename="messages.db")
+    if os.path.exists("log.txt"):
+        with open("log.txt", "rb") as log_file:
+            await update.message.reply_document(document=InputFile(log_file), filename="log.txt")
     else:
-        await update.message.reply_text("Файл базы данных не найден.")
+        await update.message.reply_text("Файл логов не найден.")
 
 # Запуск бота
 if __name__ == "__main__":
