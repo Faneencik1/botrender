@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
 file_handler = logging.FileHandler("log.txt", encoding="utf-8")
-file_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s'))
+file_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
 logger.addHandler(file_handler)
 
 # Отключаем лишние логи от библиотек
