@@ -5,8 +5,9 @@ from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
+import asyncio
 
-# Настраиваем свой логгер
+# Настраиваем логгер
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -17,7 +18,7 @@ file_handler = logging.FileHandler(log_filename, encoding="utf-8")
 file_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
 logger.addHandler(file_handler)
 
-# Отключаем лишние логи от библиотек
+# Отключаем лишние логи
 logging.getLogger("httpx").setLevel(logging.WARNING)
 logging.getLogger("apscheduler").setLevel(logging.WARNING)
 logging.getLogger("telegram").setLevel(logging.WARNING)
@@ -28,7 +29,7 @@ CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
 
-# Основной обработчик сообщений
+# Обработчик сообщений
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
@@ -90,7 +91,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
-# Команда /log — отправка логов вручную
+# Команда /log
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ALLOWED_USERS:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
@@ -105,7 +106,7 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Файл логов за сегодня не найден.")
 
-# Автоматическая отправка логов в 00:00 по МСК
+# Автоматическая отправка логов
 async def send_daily_log(bot):
     log_date = datetime.now().strftime("%Y-%m-%d")
     log_filename = f"log_{log_date}.txt"
@@ -116,20 +117,22 @@ async def send_daily_log(bot):
     else:
         await bot.send_message(chat_id=6811659941, text=f"Файл логов за {log_date} не найден.")
 
-# Запуск бота
-if __name__ == "__main__":
+# Асинхронный запуск
+async def main():
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("log", send_log))
     app.add_handler(MessageHandler(filters.ALL, forward))
 
-    # Планировщик для автоматической отправки логов
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
     scheduler.add_job(send_daily_log, CronTrigger(hour=0, minute=0), args=[app.bot])
     scheduler.start()
 
     logger.info("Бот запущен ✅ с Webhook")
-    app.run_webhook(
+    await app.run_webhook(
         listen="0.0.0.0",
         port=8080,
         webhook_url=WEBHOOK_URL
     )
+
+if __name__ == "__main__":
+    asyncio.run(main())
