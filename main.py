@@ -86,7 +86,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 # Отправка логов
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    if update.effective_user.id != CREATOR_CHAT_ID:
+    if update.effective_user.id not in ALLOWED_USERS:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
         return
 
