@@ -3,6 +3,8 @@ import logging
 from datetime import datetime
 from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from apscheduler.triggers.cron import CronTrigger
 
 # Настраиваем свой логгер
 logger = logging.getLogger(__name__)
@@ -88,7 +90,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
-# Команда /log — отправка логов
+# Команда /log — отправка логов вручную
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id not in ALLOWED_USERS:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
@@ -103,11 +105,28 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Файл логов за сегодня не найден.")
 
+# Автоматическая отправка логов в 00:00 по МСК
+async def send_daily_log(bot):
+    log_date = datetime.now().strftime("%Y-%m-%d")
+    log_filename = f"log_{log_date}.txt"
+
+    if os.path.exists(log_filename):
+        with open(log_filename, "rb") as log_file:
+            await bot.send_document(chat_id=6811659941, document=InputFile(log_file), filename=log_filename)
+    else:
+        await bot.send_message(chat_id=6811659941, text=f"Файл логов за {log_date} не найден.")
+
 # Запуск бота
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("log", send_log))
     app.add_handler(MessageHandler(filters.ALL, forward))
+
+    # Планировщик для автоматической отправки логов
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(send_daily_log, CronTrigger(hour=0, minute=0), args=[app.bot])
+    scheduler.start()
+
     logger.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
         listen="0.0.0.0",
