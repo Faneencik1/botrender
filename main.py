@@ -117,23 +117,19 @@ async def send_daily_log(bot):
         await bot.send_message(chat_id=6811659941, text=f"Файл логов за {log_date} не найден.")
 
 # Запуск
-import asyncio
-
-async def main():
+if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("log", send_log))
     app.add_handler(MessageHandler(filters.ALL, forward))
 
+    # Планировщик запускаем вручную
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
     scheduler.add_job(send_daily_log, CronTrigger(hour=0, minute=0), args=[app.bot])
     scheduler.start()
 
     logger.info("Бот запущен ✅ с Webhook")
-    await app.run_webhook(
+    app.run_webhook(
         listen="0.0.0.0",
         port=8080,
         webhook_url=WEBHOOK_URL
     )
-
-if __name__ == "__main__":
-    asyncio.run(main())
