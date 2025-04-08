@@ -7,7 +7,11 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, Comma
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-file_handler = logging.FileHandler("log.txt", encoding="utf-8")
+from datetime import datetime
+
+log_date = datetime.now().strftime("%Y-%m-%d")
+log_filename = f"log_{log_date}.txt"
+file_handler = logging.FileHandler(log_filename, encoding="utf-8")
 file_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
 logger.addHandler(file_handler)
 
