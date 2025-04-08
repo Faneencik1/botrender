@@ -29,11 +29,6 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     username = message.from_user.username or message.from_user.id
 
-        user_id=message.from_user.id,
-        username=username,
-        message=message.text if message.text else "[non-text]"
-    )
-
     # Не отправляет /start
     if message.text and message.text.strip() == "/start":
         await message.reply_text("Напиши свое сообщение или отправь фото.")
