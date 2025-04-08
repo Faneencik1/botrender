@@ -1,5 +1,6 @@
 import os
 import logging
+from datetime import datetime
 from telegram import Update, InputFile
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 
@@ -7,10 +8,9 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, Comma
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-from datetime import datetime
-
 log_date = datetime.now().strftime("%Y-%m-%d")
 log_filename = f"log_{log_date}.txt"
+
 file_handler = logging.FileHandler(log_filename, encoding="utf-8")
 file_handler.setFormatter(logging.Formatter('[%(asctime)s] %(message)s', datefmt='%Y-%m-%d %H:%M:%S'))
 logger.addHandler(file_handler)
@@ -94,11 +94,14 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
         return
 
-    if os.path.exists("log.txt"):
-        with open("log.txt", "rb") as log_file:
-            await update.message.reply_document(document=InputFile(log_file), filename="log.txt")
+    log_date = datetime.now().strftime("%Y-%m-%d")
+    log_filename = f"log_{log_date}.txt"
+
+    if os.path.exists(log_filename):
+        with open(log_filename, "rb") as log_file:
+            await update.message.reply_document(document=InputFile(log_file), filename=log_filename)
     else:
-        await update.message.reply_text("Файл логов не найден.")
+        await update.message.reply_text("Файл логов за сегодня не найден.")
 
 # Запуск бота
 if __name__ == "__main__":
