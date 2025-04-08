@@ -6,7 +6,7 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, Comma
 # Логирование
 logging.basicConfig(
     format='[%(asctime)s] %(message)s',
-    level=logging.INFO,
+    level=logging.WARNING,
     datefmt='%Y-%m-%d %H:%M:%S',
     handlers=[
         logging.FileHandler("log.txt", encoding="utf-8"),
