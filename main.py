@@ -107,7 +107,7 @@ async def send_logfile(update: Update, context: ContextTypes.DEFAULT_TYPE):
 if __name__ == "__main__":
     init_db()
     app = ApplicationBuilder().token(BOT_TOKEN).build()
-    app.add_handler(CommandHandler("log", send_log))
+    app.add_handler(CommandHandler("log", send_logfile))
     app.add_handler(MessageHandler(filters.ALL, forward))
     logging.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
