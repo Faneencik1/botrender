@@ -36,13 +36,15 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
     # Текст
     if message.text:
+        logging.info(f"Текст от @{username}: {message.text}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
         await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
         return
 
     # Фото
-    elif message.photo:
+    elif message.photo:        
+        logging.info(f"Фото от @{username}")
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
         await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
@@ -51,6 +53,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Голосовое
     elif message.voice:
+        logging.info(f"Голосовое Сообщение от @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
         await message.reply_text("Голосовое сообщение получено! Скоро оно будет опубликовано в канал.")
@@ -58,6 +61,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Документ
     elif message.document:
+        logging.info(f"Документ от @{username}")
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
         await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
@@ -66,6 +70,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Видео
     elif message.video:
+        logging.info(f"Видео от @{username}")
         caption = message.caption if message.caption else ""
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
         await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
@@ -74,6 +79,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Видеосообщение (кружок)
     elif message.video_note:
+        logging.info(f"Видеосообщение от @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
         await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
         await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
@@ -81,6 +87,7 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Неизвестный тип
     else:
+        logging.info(f"Неизвестный тип сообщения от @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
