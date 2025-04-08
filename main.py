@@ -84,8 +84,9 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
-# Команда /log — отправка базы данных
-    if update.effective_user.id not in ALLOWED_USERS:
+# Отправка логов
+async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    if update.effective_user.id != CREATOR_CHAT_ID:
         await update.message.reply_text("Недостаточно прав для доступа к логам.")
         return
 
@@ -95,9 +96,11 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     else:
         await update.message.reply_text("Файл логов не найден.")
 
+
 # Запуск бота
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+    app.add_handler(CommandHandler("log", send_log))
     app.add_handler(MessageHandler(filters.ALL, forward))
     logging.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
