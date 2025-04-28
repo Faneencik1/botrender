@@ -1,10 +1,11 @@
 import os
 import logging
 from datetime import datetime
+from collections import defaultdict
 from telegram import Update, InputFile, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 
-# Настраиваем свой логгер
+# Настраиваем свой логгер (ваш текущий код логгера остается без изменений)
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
@@ -26,7 +27,9 @@ CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
 
-# Основной обработчик сообщений
+# Кэш для медиагрупп
+media_group_cache = defaultdict(list)
+
 async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     message = update.message
     if not message:
@@ -38,63 +41,92 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Напиши свое сообщение или отправь фото.")
         return
 
+    # Обработка медиагрупп (альбомов из нескольких фото)
+    if hasattr(message, 'media_group_id') and message.media_group_id and (message.photo or message.document or message.video):
+        if message.photo:
+            # Берем фото с самым высоким качеством (последний элемент в списке)
+            media_group_cache[message.media_group_id].append(
+                InputMediaPhoto(media=message.photo[-1].file_id, 
+                              caption=message.caption if message.caption else None)
+            )
+        elif message.document:
+            media_group_cache[message.media_group_id].append(
+                InputMediaDocument(media=message.document.file_id,
+                                  caption=message.caption if message.caption else None)
+            )
+        elif message.video:
+            media_group_cache[message.media_group_id].append(
+                InputMediaVideo(media=message.video.file_id,
+                                caption=message.caption if message.caption else None)
+            )
+        
+        # Ждем 1 секунду на случай, если будут еще файлы в этой группе
+        await asyncio.sleep(1)
+        
+        # Если это последнее сообщение в группе (проверяем по кэшу)
+        if message.media_group_id in media_group_cache:
+            media_group = media_group_cache.pop(message.media_group_id)
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Медиагруппа от: @{username}")
+            await context.bot.send_media_group(chat_id=CREATOR_CHAT_ID, media=media_group)
+            await message.reply_text("Медиагруппа получена! Скоро она будет опубликована.")
+        return
+
+    # Обработка одиночных сообщений
     if message.text:
         logger.info(f"Текст от @{username}: {message.text}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=message.text)
-        await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}\n{message.text}")
+        await message.reply_text("Сообщение получено! Скоро оно будет опубликовано.")
         return
 
     elif message.photo:
-        caption = message.caption if message.caption else None
-        photos = message.photo  # список всех фотографий в сообщении
-
-        media_group = []
-        for i, photo in enumerate(photos):
-            if i == len(photos) - 1:  # Только к последнему фото прикрепляем подпись
-                media_group.append(InputMediaPhoto(media=photo.file_id, caption=caption))
-            else:
-                media_group.append(InputMediaPhoto(media=photo.file_id))
-
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
-        await context.bot.send_media_group(chat_id=CREATOR_CHAT_ID, media=media_group)
-        await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
+        photo = message.photo[-1]  # Берем самое качественное фото
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
+        await context.bot.send_photo(
+            chat_id=CREATOR_CHAT_ID,
+            photo=photo.file_id,
+            caption=message.caption if message.caption else None
+        )
+        await message.reply_text("Фото получено! Скоро оно будет опубликовано.")
         return
 
     elif message.voice:
         logger.info(f"Голосовое от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое от: @{username}")
         await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
-        await message.reply_text("Голосовое сообщение получено! Скоро оно будет опубликовано в канал.")
+        await message.reply_text("Голосовое сообщение получено!")
         return
 
     elif message.document:
-        caption = message.caption if message.caption else ""
-        logger.info(f"Документ от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
-        await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
-        await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ от: @{username}")
+        await context.bot.send_document(
+            chat_id=CREATOR_CHAT_ID,
+            document=message.document.file_id,
+            caption=message.caption if message.caption else None
+        )
+        await message.reply_text("Документ получен!")
         return
 
     elif message.video:
-        caption = message.caption if message.caption else ""
-        logger.info(f"Видео от @{username}")
         await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
-        await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
-        await message.reply_text("Видео получено! Скоро оно будет опубликовано в канал.")
+        await context.bot.send_video(
+            chat_id=CREATOR_CHAT_ID,
+            video=message.video.file_id,
+            caption=message.caption if message.caption else None
+        )
+        await message.reply_text("Видео получено!")
         return
 
     elif message.video_note:
-        logger.info(f"Кружок от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеокружок от: @{username}")
         await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
-        await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
+        await message.reply_text("Видеосообщение получено!")
         return
 
     else:
         logger.info(f"Неизвестный тип от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
+        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип от: @{username}")
+        await message.reply_text("Этот тип сообщений пока не поддерживается.")
+
 
 # Команда /log — отправка логов
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
