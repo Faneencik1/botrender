@@ -61,40 +61,40 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
     return
 
-    elif message.voice:
-        logger.info(f"Голосовое от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
-        await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
-        await message.reply_text("Голосовое сообщение получено! Скоро оно будет опубликовано в канал.")
-        return
+        elif message.voice:
+            logger.info(f"Голосовое от @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Голосовое сообщение от: @{username}")
+            await context.bot.send_voice(chat_id=CREATOR_CHAT_ID, voice=message.voice.file_id)
+            await message.reply_text("Голосовое сообщение получено! Скоро оно будет опубликовано в канал.")
+            return
 
-    elif message.document:
-        caption = message.caption if message.caption else ""
-        logger.info(f"Документ от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
-        await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
-        await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
-        return
+        elif message.document:
+            caption = message.caption if message.caption else ""
+            logger.info(f"Документ от @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Документ: @{username}")
+            await context.bot.send_document(chat_id=CREATOR_CHAT_ID, document=message.document.file_id, caption=caption)
+            await message.reply_text("Документ получен! Скоро он будет опубликован в канал.")
+            return
 
-    elif message.video:
-        caption = message.caption if message.caption else ""
-        logger.info(f"Видео от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
-        await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
-        await message.reply_text("Видео получено! Скоро оно будет опубликовано в канал.")
-        return
+        elif message.video:
+            caption = message.caption if message.caption else ""
+            logger.info(f"Видео от @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
+            await context.bot.send_video(chat_id=CREATOR_CHAT_ID, video=message.video.file_id, caption=caption)
+            await message.reply_text("Видео получено! Скоро оно будет опубликовано в канал.")
+            return
 
-    elif message.video_note:
-        logger.info(f"Кружок от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
-        await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
-        await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
-        return
+        elif message.video_note:
+            logger.info(f"Кружок от @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видеосообщение от: @{username}")
+            await context.bot.send_video_note(chat_id=CREATOR_CHAT_ID, video_note=message.video_note.file_id)
+            await message.reply_text("Видеосообщение получено! Скоро оно будет опубликовано в канал.")
+            return
 
-    else:
-        logger.info(f"Неизвестный тип от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
+        else:
+            logger.info(f"Неизвестный тип от @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Неизвестный тип сообщения от: @{username}")
+            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text="[неизвестный тип сообщения]")
 
 # Команда /log — отправка логов
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
