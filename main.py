@@ -45,15 +45,21 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
         return
 
-
     elif message.photo:
         caption = message.caption if message.caption else None
-        media = [InputMediaPhoto(media=message.photo[-1].file_id, caption=caption)]
-    
-        await context.bot.send_media_group(chat_id=CREATOR_CHAT_ID, media=media)
-        await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
-        return
+        photos = message.photo  # список всех фотографий в сообщении
 
+        media_group = []
+        for i, photo in enumerate(photos):
+            if i == len(photos) - 1:  # Только к последнему фото прикрепляем подпись
+                media_group.append(InputMediaPhoto(media=photo.file_id, caption=caption))
+            else:
+                media_group.append(InputMediaPhoto(media=photo.file_id))
+
+    await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}")
+    await context.bot.send_media_group(chat_id=CREATOR_CHAT_ID, media=media_group)
+    await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
+    return
 
     elif message.voice:
         logger.info(f"Голосовое от @{username}")
