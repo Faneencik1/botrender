@@ -1,7 +1,7 @@
 import os
 import logging
 from datetime import datetime
-from telegram import Update, InputFile
+from telegram import Update, InputFile, InputMediaPhoto
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 
 # Настраиваем свой логгер
@@ -45,13 +45,15 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await message.reply_text("Сообщение получено! Скоро оно будет опубликовано в канал.")
         return
 
+
     elif message.photo:
-        caption = message.caption if message.caption else ""
-        logger.info(f"Фото от @{username}")
-        await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
-        await context.bot.send_photo(chat_id=CREATOR_CHAT_ID, photo=message.photo[-1].file_id, caption=caption)
+        caption = message.caption if message.caption else None
+        media = [InputMediaPhoto(media=message.photo[-1].file_id, caption=caption)]
+    
+        await context.bot.send_media_group(chat_id=CREATOR_CHAT_ID, media=media)
         await message.reply_text("Фото получено! Скоро оно будет опубликовано в канал.")
         return
+
 
     elif message.voice:
         logger.info(f"Голосовое от @{username}")
