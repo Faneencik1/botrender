@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 from collections import defaultdict
-from telegram import Update, InputFile, InputMediaPhoto
+from telegram import Update, InputFile, InputMediaPhoto, InputMediaDocument, InputMediaVideo
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, CommandHandler, filters
 
 # Настраиваем свой логгер (ваш текущий код логгера остается без изменений)
