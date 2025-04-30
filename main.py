@@ -44,23 +44,42 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     # Обработка медиагрупп (альбомов)
     if hasattr(message, 'media_group_id') and message.media_group_id:
+        caption = message.caption if message.caption else None
+        
         if message.photo:
-            media = InputMediaPhoto(media=message.photo[-1].file_id)
+            # Для первого элемента в группе добавляем подпись
+            if message.media_group_id not in media_group_cache:
+                media = InputMediaPhoto(
+                    media=message.photo[-1].file_id,
+                    caption=caption
+                )
+                media_group_cache[message.media_group_id] = {
+                    'media_list': [media],
+                    'username': username,
+                    'message': message
+                }
+            else:
+                media = InputMediaPhoto(media=message.photo[-1].file_id)
+                media_group_cache[message.media_group_id]['media_list'].append(media)
+        
         elif message.video:
-            media = InputMediaVideo(media=message.video.file_id)
+            # Для первого элемента в группе добавляем подпись
+            if message.media_group_id not in media_group_cache:
+                media = InputMediaVideo(
+                    media=message.video.file_id,
+                    caption=caption
+                )
+                media_group_cache[message.media_group_id] = {
+                    'media_list': [media],
+                    'username': username,
+                    'message': message
+                }
+            else:
+                media = InputMediaVideo(media=message.video.file_id)
+                media_group_cache[message.media_group_id]['media_list'].append(media)
+        
         else:
             return
-
-        # Для первого элемента добавляем подпись
-        if message.media_group_id not in media_group_cache:
-            media.caption = message.caption if message.caption else None
-            media_group_cache[message.media_group_id] = {
-                'media_list': [media],
-                'username': username,
-                'message': message
-            }
-        else:
-            media_group_cache[message.media_group_id]['media_list'].append(media)
 
         # Ждем 1 секунду перед обработкой группы
         await asyncio.sleep(1)
