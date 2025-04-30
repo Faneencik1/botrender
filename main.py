@@ -100,37 +100,55 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         # Обработка одиночных медиа
         if message.photo:
-            # Отправляем информацию об отправителе
             await context.bot.send_message(
                 chat_id=CREATOR_CHAT_ID,
                 text=f"Фото от: @{username}"
             )
-            
-            # Отправляем само фото с подписью
             await context.bot.send_photo(
                 chat_id=CREATOR_CHAT_ID,
                 photo=message.photo[-1].file_id,
                 caption=message.caption if message.caption else None
             )
-            
             await message.reply_text("Фото получено! Скоро будет опубликовано.")
             return
 
         if message.video:
-            # Отправляем информацию об отправителе
             await context.bot.send_message(
                 chat_id=CREATOR_CHAT_ID,
                 text=f"Видео от: @{username}"
             )
-            
-            # Отправляем само видео с подписью
             await context.bot.send_video(
                 chat_id=CREATOR_CHAT_ID,
                 video=message.video.file_id,
                 caption=message.caption if message.caption else None
             )
-            
             await message.reply_text("Видео получено! Скоро будет опубликовано.")
+            return
+
+        # Обработка голосовых сообщений
+        if message.voice:
+            await context.bot.send_message(
+                chat_id=CREATOR_CHAT_ID,
+                text=f"Голосовое сообщение от: @{username}"
+            )
+            await context.bot.send_voice(
+                chat_id=CREATOR_CHAT_ID,
+                voice=message.voice.file_id
+            )
+            await message.reply_text("Голосовое сообщение получено! Скоро будет опубликовано.")
+            return
+
+        # Обработка видеосообщений (кружков)
+        if message.video_note:
+            await context.bot.send_message(
+                chat_id=CREATOR_CHAT_ID,
+                text=f"Видеосообщение от: @{username}"
+            )
+            await context.bot.send_video_note(
+                chat_id=CREATOR_CHAT_ID,
+                video_note=message.video_note.file_id
+            )
+            await message.reply_text("Видеосообщение получено! Скоро будет опубликовано.")
             return
 
         # Обработка текста
@@ -139,12 +157,10 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 chat_id=CREATOR_CHAT_ID,
                 text=f"Сообщение от: @{username}"
             )
-
             await context.bot.send_message(
                 chat_id=CREATOR_CHAT_ID,
                 text=message.text
             )
-            
             await message.reply_text("Сообщение получено! Скоро будет опубликовано.")
             return
 
