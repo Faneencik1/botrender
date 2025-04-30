@@ -29,24 +29,23 @@ WEBHOOK_URL = os.getenv("WEBHOOK_URL")
 ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
 
 # Глобальные переменные для обработки медиагрупп
-media_groups = {}
-media_group_timers = {}
+media_groups = defaultdict(list)
+media_group_info = {}
 
-async def process_media_group(media_group_id, context, username, first_message):
+async def process_media_group(media_group_id, context):
     await asyncio.sleep(3)  # Ждем 3 секунды для сбора всех медиа
     
-    if media_group_id in media_groups:
+    if media_group_id in media_groups and media_group_id in media_group_info:
         media_list = media_groups.pop(media_group_id)
-        if media_group_id in media_group_timers:
-            media_group_timers.pop(media_group_id)
+        username, first_message = media_group_info.pop(media_group_id)
         
         if media_list:
-            # Добавляем подпись только к первому элементу
-            caption = first_message.caption if first_message.caption else None
-            if caption:
-                media_list[0] = type(media_list[0])(  # Создаем новый объект с подписью
+            # Добавляем подпись к первому элементу
+            if first_message.caption:
+                media_class = type(media_list[0])
+                media_list[0] = media_class(
                     media=media_list[0].media,
-                    caption=caption
+                    caption=first_message.caption
                 )
             
             await context.bot.send_message(
@@ -84,58 +83,57 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 return
 
-            # Добавляем медиа в группу
+            # Для первого элемента в группе сохраняем информацию
             if media_group_id not in media_groups:
-                media_groups[media_group_id] = []
-                first_message = message  # Сохраняем первое сообщение для подписи
-            else:
-                first_message = None
+                media_group_info[media_group_id] = (username, message)
             
             media_groups[media_group_id].append(media)
             
-            # Управляем таймером обработки группы
-            if media_group_id in media_group_timers:
-                media_group_timers[media_group_id].cancel()
+            # Перезапускаем таймер обработки группы
+            if hasattr(context, '_media_group_timer'):
+                context._media_group_timer.cancel()
             
-            media_group_timers[media_group_id] = asyncio.create_task(
-                process_media_group(media_group_id, context, username, first_message or message)
+            context._media_group_timer = asyncio.create_task(
+                process_media_group(media_group_id, context)
             )
             return
 
         # Обработка одиночных медиа
         if message.photo:
-            caption = message.caption if message.caption else ""
-            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Фото от: @{username}")
+            await context.bot.send_message(
+                chat_id=CREATOR_CHAT_ID,
+                text=f"Фото от: @{username}\n\n{message.caption if message.caption else ''}"
+            )
             await context.bot.send_photo(
                 chat_id=CREATOR_CHAT_ID,
-                photo=message.photo[-1].file_id,
-                caption=caption
+                photo=message.photo[-1].file_id
             )
             await message.reply_text("Фото получено! Скоро будет опубликовано.")
             return
 
         if message.video:
-            caption = message.caption if message.caption else ""
-            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Видео от: @{username}")
+            await context.bot.send_message(
+                chat_id=CREATOR_CHAT_ID,
+                text=f"Видео от: @{username}\n\n{message.caption if message.caption else ''}"
+            )
             await context.bot.send_video(
                 chat_id=CREATOR_CHAT_ID,
-                video=message.video.file_id,
-                caption=caption
+                video=message.video.file_id
             )
             await message.reply_text("Видео получено! Скоро будет опубликовано.")
             return
 
-        # Обработка текста и других типов сообщений
+        # Обработка текста
         if message.text:
-            await context.bot.send_message(chat_id=CREATOR_CHAT_ID, text=f"Сообщение от: @{username}\n{message.text}")
+            await context.bot.send_message(
+                chat_id=CREATOR_CHAT_ID,
+                text=f"Сообщение от: @{username}\n\n{message.text}"
+            )
             await message.reply_text("Сообщение получено! Скоро будет опубликовано.")
             return
 
-        # Другие типы медиа (голосовые, документы и т.д.)
-        # ...
-
     except Exception as e:
-        logger.error(f"Ошибка при обработке сообщения: {e}")
+        logger.error(f"Ошибка при обработке сообщения: {e}", exc_info=True)
         if message:
             await message.reply_text("Произошла ошибка при обработке вашего сообщения.")
 
@@ -154,15 +152,18 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             await update.message.reply_text("Файл логов за сегодня не найден.")
     except Exception as e:
-        logger.error(f"Ошибка при отправке логов: {e}")
+        logger.error(f"Ошибка при отправке логов: {e}", exc_info=True)
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("log", send_log))
     app.add_handler(MessageHandler(filters.ALL, forward))
     
-    # Добавляем обработчик ошибок
-    app.add_error_handler(lambda update, context: logger.error(f"Необработанное исключение: {context.error}"))
+    # Обработчик ошибок
+    app.add_error_handler(lambda update, context: logger.error(
+        f"Необработанное исключение: {context.error}", 
+        exc_info=True
+    ))
     
     logger.info("Бот запущен ✅ с Webhook")
     app.run_webhook(
