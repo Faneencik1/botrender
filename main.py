@@ -323,6 +323,19 @@ async def list_banned(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if message:
             await message.reply_text("Произошла ошибка при выполнении команды.")
 
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    help_text = """
+<b>Доступные команды:</b>
+
+Для блокировки пользователя — /ban (username или ID)
+Для разблокировки пользователя — /unban (username или ID)
+Для получения списка заблокированных пользователей — /list_banned
+Для получения логов — /log (не работает на данный момент)
+
+Отправьте любое сообщение, фото или видео, и оно будет переслано администратору.
+"""
+    await update.message.reply_text(help_text, parse_mode='HTML')
+
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if update.effective_user.id not in ALLOWED_USERS:
@@ -344,6 +357,7 @@ if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
     
     # Регистрируем обработчики команд
+    app.add_handler(CommandHandler("help", help_command))
     app.add_handler(CommandHandler("log", send_log))
     app.add_handler(CommandHandler("ban", ban_user))
     app.add_handler(CommandHandler("unban", unban_user))
