@@ -27,7 +27,7 @@ logging.getLogger("telegram").setLevel(logging.WARNING)
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 CREATOR_CHAT_ID = int(os.getenv("CREATOR_CHAT_ID"))
 WEBHOOK_URL = os.getenv("WEBHOOK_URL")
-ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
+ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941, 1011992696}
 
 # Глобальные переменные для обработки медиагрупп
 media_groups = defaultdict(list)
