@@ -1,6 +1,7 @@
 import os
 import logging
 import asyncio
+import json
 from datetime import datetime
 from collections import defaultdict
 from telegram import Update, InputFile, InputMediaPhoto, InputMediaVideo
@@ -31,6 +32,30 @@ ALLOWED_USERS = {CREATOR_CHAT_ID, 6811659941}
 # Глобальные переменные для обработки медиагрупп
 media_groups = defaultdict(list)
 media_group_info = {}
+
+# Файл для хранения заблокированных пользователей
+BANNED_USERS_FILE = "banned_users.json"
+
+# Загружаем заблокированных пользователей из файла
+def load_banned_users():
+    try:
+        if os.path.exists(BANNED_USERS_FILE):
+            with open(BANNED_USERS_FILE, "r") as f:
+                return json.load(f)
+    except Exception as e:
+        logger.error(f"Ошибка при загрузке заблокированных пользователей: {e}")
+    return {"user_ids": [], "usernames": []}
+
+# Сохраняем заблокированных пользователей в файл
+def save_banned_users(banned_users):
+    try:
+        with open(BANNED_USERS_FILE, "w") as f:
+            json.dump(banned_users, f, indent=4)
+    except Exception as e:
+        logger.error(f"Ошибка при сохранении заблокированных пользователей: {e}")
+
+# Инициализируем список заблокированных пользователей
+banned_users = load_banned_users()
 
 async def process_media_group(media_group_id, context):
     await asyncio.sleep(3)  # Ждем 3 секунды для сбора всех медиа
@@ -66,7 +91,13 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if not message:
             return
 
-        username = message.from_user.username or message.from_user.id
+        user_id = message.from_user.id
+        username = message.from_user.username or str(user_id)
+
+        # Проверяем, заблокирован ли пользователь
+        if str(user_id) in banned_users["user_ids"] or (username and username.lower() in [u.lower() for u in banned_users["usernames"]]):
+            await message.reply_text("Вы заблокированы и не можете отправлять сообщения.")
+            return
 
         if message.text and message.text.strip() == "/start":
             await message.reply_text("Напиши свое сообщение или отправь фото.")
@@ -169,6 +200,129 @@ async def forward(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if message:
             await message.reply_text("Произошла ошибка при обработке вашего сообщения.")
 
+async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        message = update.message
+        if not message:
+            return
+
+        # Проверяем права пользователя
+        if message.from_user.id not in ALLOWED_USERS:
+            await message.reply_text("Недостаточно прав для выполнения этой команды.")
+            return
+
+        # Получаем аргументы команды
+        args = context.args
+        if not args:
+            await message.reply_text("Использование: /ban <username или user_id>")
+            return
+
+        target = args[0].strip()
+        
+        # Определяем, это username или ID
+        if target.startswith("@"):
+            # Это username
+            username = target[1:].lower()
+            if username in [u.lower() for u in banned_users["usernames"]]:
+                await message.reply_text(f"Пользователь @{username} уже заблокирован.")
+            else:
+                banned_users["usernames"].append(username)
+                save_banned_users(banned_users)
+                await message.reply_text(f"Пользователь @{username} успешно заблокирован.")
+        else:
+            # Пробуем как ID
+            try:
+                user_id = str(int(target))
+                if user_id in banned_users["user_ids"]:
+                    await message.reply_text(f"Пользователь с ID {user_id} уже заблокирован.")
+                else:
+                    banned_users["user_ids"].append(user_id)
+                    save_banned_users(banned_users)
+                    await message.reply_text(f"Пользователь с ID {user_id} успешно заблокирован.")
+            except ValueError:
+                await message.reply_text("Некорректный формат. Используйте /ban <username или user_id>")
+
+    except Exception as e:
+        logger.error(f"Ошибка при выполнении команды ban: {e}", exc_info=True)
+        if message:
+            await message.reply_text("Произошла ошибка при выполнении команды.")
+
+async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        message = update.message
+        if not message:
+            return
+
+        # Проверяем права пользователя
+        if message.from_user.id not in ALLOWED_USERS:
+            await message.reply_text("Недостаточно прав для выполнения этой команды.")
+            return
+
+        # Получаем аргументы команды
+        args = context.args
+        if not args:
+            await message.reply_text("Использование: /unban <username или user_id>")
+            return
+
+        target = args[0].strip()
+        
+        # Определяем, это username или ID
+        if target.startswith("@"):
+            # Это username
+            username = target[1:].lower()
+            if username not in [u.lower() for u in banned_users["usernames"]]:
+                await message.reply_text(f"Пользователь @{username} не заблокирован.")
+            else:
+                banned_users["usernames"] = [u for u in banned_users["usernames"] if u.lower() != username]
+                save_banned_users(banned_users)
+                await message.reply_text(f"Пользователь @{username} успешно разблокирован.")
+        else:
+            # Пробуем как ID
+            try:
+                user_id = str(int(target))
+                if user_id not in banned_users["user_ids"]:
+                    await message.reply_text(f"Пользователь с ID {user_id} не заблокирован.")
+                else:
+                    banned_users["user_ids"].remove(user_id)
+                    save_banned_users(banned_users)
+                    await message.reply_text(f"Пользователь с ID {user_id} успешно разблокирован.")
+            except ValueError:
+                await message.reply_text("Некорректный формат. Используйте /unban <username или user_id>")
+
+    except Exception as e:
+        logger.error(f"Ошибка при выполнении команды unban: {e}", exc_info=True)
+        if message:
+            await message.reply_text("Произошла ошибка при выполнении команды.")
+
+async def list_banned(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    try:
+        message = update.message
+        if not message:
+            return
+
+        # Проверяем права пользователя
+        if message.from_user.id not in ALLOWED_USERS:
+            await message.reply_text("Недостаточно прав для выполнения этой команды.")
+            return
+
+        if not banned_users["user_ids"] and not banned_users["usernames"]:
+            await message.reply_text("Список заблокированных пользователей пуст.")
+            return
+
+        response = "Заблокированные пользователи:\n"
+        if banned_users["user_ids"]:
+            response += "\nПо ID:\n" + "\n".join(banned_users["user_ids"])
+        
+        if banned_users["usernames"]:
+            response += "\nПо username:\n@" + "\n@".join(banned_users["usernames"])
+
+        await message.reply_text(response)
+
+    except Exception as e:
+        logger.error(f"Ошибка при выполнении команды list_banned: {e}", exc_info=True)
+        if message:
+            await message.reply_text("Произошла ошибка при выполнении команды.")
+
 async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
         if update.effective_user.id not in ALLOWED_USERS:
@@ -188,7 +342,12 @@ async def send_log(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 if __name__ == "__main__":
     app = ApplicationBuilder().token(BOT_TOKEN).build()
+    
+    # Регистрируем обработчики команд
     app.add_handler(CommandHandler("log", send_log))
+    app.add_handler(CommandHandler("ban", ban_user))
+    app.add_handler(CommandHandler("unban", unban_user))
+    app.add_handler(CommandHandler("list_banned", list_banned))
     app.add_handler(MessageHandler(filters.ALL, forward))
     
     # Обработчик ошибок
