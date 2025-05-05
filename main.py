@@ -36,21 +36,35 @@ media_group_info = {}
 # Файл для хранения заблокированных пользователей
 BANNED_USERS_FILE = "banned_users.json"
 
+def ensure_banned_users_file():
+    """Создает файл если его не существует"""
+    if not os.path.exists(BANNED_USERS_FILE):
+        with open(BANNED_USERS_FILE, 'w') as f:
+            json.dump({"user_ids": [], "usernames": []}, f)
+
 # Загружаем заблокированных пользователей из файла
 def load_banned_users():
     try:
-        if os.path.exists(BANNED_USERS_FILE):
-            with open(BANNED_USERS_FILE, "r") as f:
-                return json.load(f)
+        ensure_banned_users_file()  # Убедимся что файл существует
+        with open(BANNED_USERS_FILE, "r") as f:
+            data = json.load(f)
+            # Проверяем структуру данных
+            if "user_ids" not in data or "usernames" not in data:
+                raise ValueError("Invalid data structure in banned_users.json")
+            return data
     except Exception as e:
         logger.error(f"Ошибка при загрузке заблокированных пользователей: {e}")
-    return {"user_ids": [], "usernames": []}
+        # Возвращаем структуру по умолчанию при ошибке
+        return {"user_ids": [], "usernames": []}
 
 # Сохраняем заблокированных пользователей в файл
 def save_banned_users(banned_users):
     try:
         with open(BANNED_USERS_FILE, "w") as f:
-            json.dump(banned_users, f, indent=4)
+            json.dump({
+                "user_ids": list(set(banned_users["user_ids"])),  # Удаляем дубликаты
+                "usernames": list(set(banned_users["usernames"]))  # Удаляем дубликаты
+            }, f, indent=4, ensure_ascii=False)
     except Exception as e:
         logger.error(f"Ошибка при сохранении заблокированных пользователей: {e}")
 
