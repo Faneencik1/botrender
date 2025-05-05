@@ -34,13 +34,22 @@ media_groups = defaultdict(list)
 media_group_info = {}
 
 # Файл для хранения заблокированных пользователей
-BANNED_USERS_FILE = "banned_users.json"
+BANNED_USERS_FILE = "/tmp/banned_users.json"
 
 def ensure_banned_users_file():
     """Создает файл если его не существует"""
     if not os.path.exists(BANNED_USERS_FILE):
-        with open(BANNED_USERS_FILE, 'w') as f:
-            json.dump({"user_ids": [], "usernames": []}, f)
+        try:
+            with open(BANNED_USERS_FILE, 'w') as f:
+                json.dump({"user_ids": [], "usernames": []}, f)  # Исправлены кавычки и скобки
+            logger.info(f"Файл {BANNED_USERS_FILE} создан")
+        except Exception as e:
+            logger.error(f"Ошибка создания файла: {e}")
+            # Попробуем текущую директорию как запасной вариант
+            global BANNED_USERS_FILE  # Исправлено: должно быть "global", а не "global_"
+            BANNED_USERS_FILE = "banned_users.json"
+            with open(BANNED_USERS_FILE, 'w') as f:
+                json.dump({"user_ids": [], "usernames": []}, f)
 
 # Загружаем заблокированных пользователей из файла
 def load_banned_users():
