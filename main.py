@@ -38,32 +38,41 @@ BANNED_USERS_FILE = "/tmp/banned_users.json"
 
 def ensure_banned_users_file():
     """Создает файл если его не существует"""
-    if not os.path.exists(BANNED_USERS_FILE):
-        try:
-            with open(BANNED_USERS_FILE, 'w') as f:
-                json.dump({"user_ids": [], "usernames": []}, f)  # Исправлены кавычки и скобки
-            logger.info(f"Файл {BANNED_USERS_FILE} создан")
-        except Exception as e:
-            logger.error(f"Ошибка создания файла: {e}")
-            # Попробуем текущую директорию как запасной вариант
-            global BANNED_USERS_FILE  # Исправлено: должно быть "global", а не "global_"
-            BANNED_USERS_FILE = "banned_users.json"
+    global BANNED_USERS_FILE  # Объявляем глобальную переменную в начале функции
+    
+    try:
+        # Пробуем работать с /tmp
+        if not os.path.exists(BANNED_USERS_FILE):
             with open(BANNED_USERS_FILE, 'w') as f:
                 json.dump({"user_ids": [], "usernames": []}, f)
+            logger.info(f"Файл {BANNED_USERS_FILE} создан")
+    except Exception as e:
+        logger.error(f"Ошибка работы с /tmp: {e}")
+        # Если не получилось с /tmp, пробуем текущую директорию
+        local_path = os.path.join(os.getcwd(), "banned_users.json")
+        try:
+            with open(local_path, 'w') as f:
+                json.dump({"user_ids": [], "usernames": []}, f)
+            BANNED_USERS_FILE = local_path  # Меняем глобальную переменную
+            logger.info(f"Используем файл в текущей директории: {BANNED_USERS_FILE}")
+        except Exception as e:
+            logger.error(f"Критическая ошибка: не удалось создать файл ни в /tmp, ни в текущей директории: {e}")
+            raise
 
-# Загружаем заблокированных пользователей из файла
 def load_banned_users():
+    """Загружает список заблокированных пользователей"""
+    ensure_banned_users_file()  # Гарантируем, что файл существует
+    
     try:
-        ensure_banned_users_file()  # Убедимся что файл существует
-        with open(BANNED_USERS_FILE, "r") as f:
+        with open(BANNED_USERS_FILE, 'r') as f:
             data = json.load(f)
             # Проверяем структуру данных
-            if "user_ids" not in data or "usernames" not in data:
-                raise ValueError("Invalid data structure in banned_users.json")
+            if not isinstance(data, dict) or "user_ids" not in data or "usernames" not in data:
+                logger.error("Некорректная структура файла, возвращаем значения по умолчанию")
+                return {"user_ids": [], "usernames": []}
             return data
     except Exception as e:
-        logger.error(f"Ошибка при загрузке заблокированных пользователей: {e}")
-        # Возвращаем структуру по умолчанию при ошибке
+        logger.error(f"Ошибка загрузки файла {BANNED_USERS_FILE}: {e}")
         return {"user_ids": [], "usernames": []}
 
 # Сохраняем заблокированных пользователей в файл
