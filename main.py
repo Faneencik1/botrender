@@ -34,57 +34,30 @@ media_groups = defaultdict(list)
 media_group_info = {}
 
 # Файл для хранения заблокированных пользователей
-BANNED_USERS_FILE = "/tmp/banned_users.json"
-
-def ensure_banned_users_file():
-    """Создает файл если его не существует"""
-    global BANNED_USERS_FILE  # Объявляем глобальную переменную в начале функции
-    
-    try:
-        # Пробуем работать с /tmp
-        if not os.path.exists(BANNED_USERS_FILE):
-            with open(BANNED_USERS_FILE, 'w') as f:
-                json.dump({"user_ids": [], "usernames": []}, f)
-            logger.info(f"Файл {BANNED_USERS_FILE} создан")
-    except Exception as e:
-        logger.error(f"Ошибка работы с /tmp: {e}")
-        # Если не получилось с /tmp, пробуем текущую директорию
-        local_path = os.path.join(os.getcwd(), "banned_users.json")
-        try:
-            with open(local_path, 'w') as f:
-                json.dump({"user_ids": [], "usernames": []}, f)
-            BANNED_USERS_FILE = local_path  # Меняем глобальную переменную
-            logger.info(f"Используем файл в текущей директории: {BANNED_USERS_FILE}")
-        except Exception as e:
-            logger.error(f"Критическая ошибка: не удалось создать файл ни в /tmp, ни в текущей директории: {e}")
-            raise
+BANNED_USERS_FILE = "banned_users.json"
 
 def load_banned_users():
-    """Загружает список заблокированных пользователей"""
-    ensure_banned_users_file()  # Гарантируем, что файл существует
-    
+    """Загружает список из файла в репозитории"""
     try:
-        with open(BANNED_USERS_FILE, 'r') as f:
+        with open(BANNED_USERS_FILE, 'r', encoding='utf-8') as f:
             data = json.load(f)
-            # Проверяем структуру данных
-            if not isinstance(data, dict) or "user_ids" not in data or "usernames" not in data:
-                logger.error("Некорректная структура файла, возвращаем значения по умолчанию")
-                return {"user_ids": [], "usernames": []}
+            # Проверка структуры файла
+            if not all(key in data for key in ["user_ids", "usernames"]):
+                raise ValueError("Invalid file structure")
             return data
     except Exception as e:
-        logger.error(f"Ошибка загрузки файла {BANNED_USERS_FILE}: {e}")
-        return {"user_ids": [], "usernames": []}
+        logger.error(f"Ошибка загрузки: {e}. Создаю новый файл.")
+        default_data = {"user_ids": [], "usernames": []}
+        save_banned_users(default_data)
+        return default_data
 
-# Сохраняем заблокированных пользователей в файл
-def save_banned_users(banned_users):
+def save_banned_users(data):
+    """Сохраняет список в файл в репозитории"""
     try:
-        with open(BANNED_USERS_FILE, "w") as f:
-            json.dump({
-                "user_ids": list(set(banned_users["user_ids"])),  # Удаляем дубликаты
-                "usernames": list(set(banned_users["usernames"]))  # Удаляем дубликаты
-            }, f, indent=4, ensure_ascii=False)
+        with open(BANNED_USERS_FILE, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
     except Exception as e:
-        logger.error(f"Ошибка при сохранении заблокированных пользователей: {e}")
+        logger.error(f"Ошибка сохранения: {e}")
 
 # Инициализируем список заблокированных пользователей
 banned_users = load_banned_users()
